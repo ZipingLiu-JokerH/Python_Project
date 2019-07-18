@@ -1,0 +1,86 @@
+import pygame
+import math
+from datetime import timedelta , datetime
+from random import randint
+
+
+class Ball(object):
+
+    def __init__(self, x, y, r, showtime, ttl, color):
+        self.x = x
+        self.y = y
+        self.r = r
+        self.showtime = showtime
+        self.ttl = ttl
+        self.color = color
+        self.alive = True
+        self.suicide = False
+
+    def user_destroy(self, x, y):
+        dx = abs(self.x - x)
+        dy = abs(self.y - y)
+        dist = math.sqrt(dx ** 2 + dy **2)
+        if dist < self.r:
+            self.alive = False
+
+    def self_destroy(self):
+        if datetime.now() - self.showtime > self.ttl and self.alive:
+            self.alive = False
+            self.suicide = True
+            return True
+    def draw(self, board):
+        pygame.draw.circle(board, self.color, (self.x, self.y), self.r, 0)
+
+    def __str__(self):
+        return f'({self.x},{self.y},{self.r}), showtime = {self.showtime}, ttl = {self.ttl}'
+
+
+
+def main():
+    start_time = datetime.now()
+    balls = []
+    pygame.init()
+    board = pygame.display.set_mode((800, 800))
+    pygame.display.set_caption('Ball Game')
+    ingame = True
+    num_of_balls = 30
+    max_game_time = 15
+    time_interval = timedelta(seconds=max_game_time)
+    ttl = timedelta(seconds=0.8)
+    faliure = 0
+    for i in range(num_of_balls):
+        x, y = randint(0, 800), randint(0, 800)
+        radius = randint(10, 100)
+        r, g, b = randint(0, 255), randint(0, 255), randint(0, 255)
+        show_time = start_time + timedelta(seconds=(max_game_time/num_of_balls)*i)
+        ball = Ball(x, y, radius, show_time, ttl, (r, g, b))
+        balls.append(ball)
+    while ingame:
+        board.fill((255, 255, 255))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                ingame = False
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and balls:
+                x, y = event.pos
+                for ball in balls:
+                    if ball.alive and ball.showtime <= datetime.now() and datetime.now() <= ball.showtime + ball.ttl:
+                        ball.user_destroy(x, y)
+
+        for ball in balls:
+            if ball.alive and ball.showtime <= datetime.now() and datetime.now() <= ball.showtime + ball.ttl:
+                ball.draw(board)
+            elif not ball.alive:
+                balls.remove(ball)
+            if ball.self_destroy():
+                faliure += 1
+
+        pygame.display.flip()
+        pygame.time.delay(10)
+
+        if not balls:
+            ingame = False
+
+    print(faliure)
+
+if __name__ == '__main__':
+    main()
